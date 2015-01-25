@@ -18,6 +18,8 @@ DOWNLOADER_MIDDLEWARES = {
     'scrapy.contrib.downloadermiddleware.useragent.UserAgentMiddleware': None,
     # 'neiman_marcus.WebkitDownloader': 543
 }
+# IMAGES_STORE = './img/'
+# ITEM_PIPELINES = {'scrapy.contrib.pipeline.images.ImagesPipeline': 1}
 
 # Crawl responsibly by identifying yourself (and your website) on the user-agent
 #USER_AGENT = 'neiman_marcus (+http://www.yourdomain.com)'
