@@ -3,12 +3,12 @@ from neiman_marcus.items import NeimanMarcusItem
 from scrapy.http import Request
 from urlparse import urljoin
 
-#import selenium related
+#import selenium APIs
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait 
 from selenium.webdriver.support import expected_conditions as EC 
-
+from selenium.common.exceptions import NoSuchElementException, TimeoutException
 from lxml import etree
 import time
 import re
@@ -20,35 +20,51 @@ class NeimanSpider(scrapy.Spider):
 	
 	def __init__(self):
 		self.driver = webdriver.Chrome("./chromedriver")
-		self.driver.implicitly_wait(30)
+		# self.driver.implicitly_wait(30)
 		category_urls = []
 		self.start_urls = ["http://www.neimanmarcus.com/en-us/Totes/cat40860745_cat42110769_cat13030735/c.cat"]
 		
 		# append all items URLs before parsing
 		self.driver.get(self.start_urls[0]) #start from the first page
-		time.sleep(15)
-		close_button = self.driver.find_element_by_id("closeButton")
-		close_button.click()
+		#close the 
+		# time.sleep(15)
+		try:
+			wait = WebDriverWait(self.driver, 30)
+			close_button = wait.until(EC.element_to_be_clickable((By.ID,"closeButton")))
+			close_button.click()
+		except TimeoutException as e:
+			pass
+		# close_button = self.driver.find_element_by_id("closeButton")
+		# close_button.click()
 		
+		#get item URLs of the first page
 		page_source = self.driver.page_source
 		urls = self.get_item_urls(page_source)
 		self.start_urls.extend(urls)
+		time.sleep(5)
+		try:
+			total_pages = int(self.driver.find_element_by_xpath("//*[@id='epagingBottom']/li[7]").get_attribute("pagenum"))
+		except NoSuchElementException as e:
+			total_pages = 1
+			pass
 
-		next_page = self.driver.find_element_by_xpath("//a[@id='paging_next']")
-		total_pages = int(self.driver.find_element_by_xpath("//*[@id='epagingBottom']/li[7]").get_attribute("pagenum"))
-		print total_pages
-		# next_url = next_page.get_attribute("href")
-		for page in xrange(2):
-			print page
-			time.sleep(5)
-			next_page.click()
-			time.sleep(2)
-			self.start_urls.extend(self.get_item_urls(self.driver.page_source))
+		current_page = 1
+		while current_page < total_pages:
+
 			next_page = self.driver.find_element_by_xpath("//a[@id='paging_next']")
-	
+			next_page.click()
+			time.sleep(5)
+			current_page = int(self.driver.find_element_by_css_selector("li.pageOffset.currentPage.disabled").get_attribute("pagenum"))
+			print current_page
+
+			
+			self.start_urls.extend(self.get_item_urls(self.driver.page_source)) # append item urls to the list
+			# next_page = self.driver.find_element_by_xpath("//a[@id='paging_next']")
+
 	def __del__(self):
 		self.driver.close()
 		pass
+
 
 	def get_item_urls(self,page_source):
 		tree = etree.HTML(self.driver.page_source)
@@ -85,5 +101,6 @@ class NeimanSpider(scrapy.Spider):
 		return item
 
 def parse_price(price):
+	'''convert the price in string to int, in USD'''
 	return float(re.match("\$[0-9,.,\,]*",price).group(0).replace("$","").replace(",",""))
 
