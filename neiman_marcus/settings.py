@@ -20,6 +20,8 @@ DOWNLOADER_MIDDLEWARES = {
 }
 # IMAGES_STORE = './img/'
 # ITEM_PIPELINES = {'scrapy.contrib.pipeline.images.ImagesPipeline': 1}
-
+ITEM_PIPELINES = {
+	'neiman_marcus.pipelines.NeimanMarcusPipeline':100
+}
 # Crawl responsibly by identifying yourself (and your website) on the user-agent
 #USER_AGENT = 'neiman_marcus (+http://www.yourdomain.com)'
