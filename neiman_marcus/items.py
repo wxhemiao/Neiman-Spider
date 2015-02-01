@@ -22,3 +22,17 @@ class NeimanMarcusItem(scrapy.Item):
 	image_urls = scrapy.Field()
 	images = scrapy.Field()
 	# picture = scrapy.Field()
+
+class MBRawCrawlItem(scrapy.item):
+	supplierID = scrapy.Field()  #Always constant
+	categoryID = scrapy.Field()
+	designer = scrapy.Field()  #good_name, good_designer
+	name = scrapy.Field() #nick_name
+	sku = scrapy.Field()
+	orig_price = scrapy.Field()
+	curr_price = scrapy.Field()
+	description = scrapy.Field()
+	designer_desc = scrapy.Field()
+	url = scrapy.Field()
+	image_urls = scrapy.Field()
+
