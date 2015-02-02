@@ -41,7 +41,6 @@ class NeimanSpider(scrapy.Spider):
 		time.sleep(1)
 		view120 = self.driver.find_element_by_xpath("//dd[@id='HundredTwentyPerPage']/a");
 		view120.click()
-		//每页显示120个商品
 		page_source = self.driver.page_source
 		urls = self.get_item_urls(page_source)
 		self.start_urls.extend(urls)
