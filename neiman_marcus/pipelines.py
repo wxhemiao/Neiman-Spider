@@ -9,7 +9,7 @@ from neiman_marcus.postParser import MBProductManager
 class NeimanMarcusPipeline(object):
     
     def __init__(self):
-    	self.manager = MBProductManager()
+        self.manager = MBProductManager()
     
     def process_item(self, item, spider):
         self.maneger.insertProductItem(item)
