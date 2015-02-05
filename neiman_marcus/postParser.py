@@ -1,6 +1,7 @@
 import md5
 import random
 import MySQLdb
+import string
 
 def randomStringOfSize(size=6, chars=string.ascii_uppercase + string.digits):
     return ''.join(random.choice(chars) for _ in range(size))
@@ -25,7 +26,7 @@ def generateDesignerIDForProduct(item):
     return md5_digest(item['designer']+randomStringOfSize(32)+item['designer_desc'])
 
 def newSetForProduct(item, len):
-    return {'ID':generateSetIDForProduct(item), 'usage':'product_picture', 'good_id':item['good_id'], 'count':imageurls.length, 'name':item['name']}
+    return {'ID':generateSetIDForProduct(item), 'usage':'product_picture', 'good_id':item['good_id'], 'count':item['imageurls'].length, 'name':item['name']}
 
 def newImageWithURL(url, setid, Imgindex):
     aImage = {}
@@ -50,7 +51,7 @@ class MBImageManager(object):
         shFile = open(path, "w")
         for imageItem in self.assets:
             imgURL = imageItem['URL']
-            shFile.write('wget %s -O %s \n' % imageItem['extURL'], imgURL[imgURL.rfind('/'):])
+            shFile.write(u'wget {0:s} -O {1:s} \n'.format(imageItem['extURL'], imgURL[imgURL.rfind('/'):]))
         shFile.close()
 
 #Processors for item information
@@ -82,7 +83,7 @@ class MBProductManager(object):
         newItem['good_sku'] = item['sku']
         newItem['supplier_id'] = item['supplierID']
         newItem['category_id'] = item['categoryID']
-        newItem['designer_id'] = designerIDForItem['designer'])
+        newItem['designer_id'] = self.designerIDForItem['designer']
         newItem['good_designer'] = item['designer']
         newItem['name'] = item['name']
         newItem['cur_price'] = item['curr_price']
@@ -92,7 +93,7 @@ class MBProductManager(object):
         newItem['url'] = item['url']
         imgSID = self.imageManager.newSetIDWithImagesFor(item, item['image_urls'])
         newItem['imageSet'] = imgSID
-    def commitProducts():
+    def commitProducts(self):
         sqlQuery = """insert into t_goods (good_id, good_sku, supplier_id, designer_id, good_designer, good_name, nick_name, 
                 original_price, current_price, category_id, """
 
