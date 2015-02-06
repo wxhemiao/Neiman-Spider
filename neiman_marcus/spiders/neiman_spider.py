@@ -1,3 +1,4 @@
+# coding=utf-8
 import scrapy
 from neiman_marcus.items import NeimanMarcusItem
 from scrapy.http import Request
