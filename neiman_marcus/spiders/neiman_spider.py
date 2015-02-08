@@ -1,7 +1,11 @@
+# import Scrapy related
 import scrapy
-from neiman_marcus.items import NeimanMarcusItem
+from neiman_marcus.items import MBRawCrawlItem
 from scrapy.http import Request
+
 from urlparse import urljoin
+import time
+import re
 
 #import selenium APIs
 from selenium import webdriver
@@ -10,8 +14,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC 
 from selenium.common.exceptions import NoSuchElementException, TimeoutException
 from lxml import etree
-import time
-import re
+
 
 class NeimanSpider(scrapy.Spider):
 	name = "neiman"
@@ -29,7 +32,7 @@ class NeimanSpider(scrapy.Spider):
 		#close the 
 		# time.sleep(15)
 		try:
-			wait = WebDriverWait(self.driver, 30)
+			wait = WebDriverWait(self.driver, 60)
 			close_button = wait.until(EC.element_to_be_clickable((By.ID,"closeButton")))
 			close_button.click()
 		except TimeoutException as e:
@@ -41,6 +44,7 @@ class NeimanSpider(scrapy.Spider):
 		time.sleep(1)
 		view120 = self.driver.find_element_by_xpath("//dd[@id='HundredTwentyPerPage']/a");
 		view120.click()
+
 		page_source = self.driver.page_source
 		urls = self.get_item_urls(page_source)
 		self.start_urls.extend(urls)
@@ -56,7 +60,7 @@ class NeimanSpider(scrapy.Spider):
 
 			next_page = self.driver.find_element_by_xpath("//a[@id='paging_next']")
 			next_page.click()
-			time.sleep(5)
+			time.sleep(10)
 			current_page = int(self.driver.find_element_by_css_selector("li.pageOffset.currentPage.disabled").get_attribute("pagenum"))
 			print current_page
 
@@ -80,27 +84,29 @@ class NeimanSpider(scrapy.Spider):
 		yield self.parse_item(response)
 
 	def parse_item(self, response):
-		item=NeimanMarcusItem()
+		item=MBRawCrawlItem()
 		product_name = "".join(response.xpath("//h1[@itemprop='name']/text()").extract())
 		item["name"] = re.sub("\s+", " ", product_name)
-		item["purchase_link"] = response.url
-		item["description"] = response.xpath("//*[@class='product-details-info']").extract()
+		item["sku"] = response.xpath("//small/text()").extract()[0]
+		
+		item["description"] = response.xpath("//*[@class='product-details-info']/h2/ul/").extract()
+		item["desginer_desc"] = response.xpath("//*[@class='aboutDesignerCopy']").extract().split("<br>")[1]
 		
 		# check if there is a discount
 		adorn_price = response.xpath("//*[@class='price-adornments']/text()").extract()
 		if len(adorn_price) != 0:
-			item["price"] = parse_price(adorn_price[0])
-			item["discount_price"] = parse_price(response.xpath("//*[@itemprop='price']/text()").extract()[0])
+			item["orig_price"] = parse_price(adorn_price[0])
+			item["current_price"] = parse_price(response.xpath("//*[@itemprop='price']/text()").extract()[0])
 		else:
-			item["price"] = parse_price(response.xpath("//*[@itemprop='price']/text()").extract()[0])
-			item["discount_price"] = item["price"]
+			item["orig_price"] = parse_price(response.xpath("//*[@itemprop='price']/text()").extract()[0])
+			item["curr_price"] = item["price"]
 		
-		item["sku"] = response.xpath("//small/text()").extract()[0]
+		item["url"] = response.url
 		item["image_urls"] = response.xpath("//ul[@class='list-inline']/li/img/@data-zoom-url").extract()
 
 
 
-		# self.log(item["name"], item["sku"])
+		self.log(item)
 		return item
 
 def parse_price(price):

@@ -23,7 +23,7 @@ class NeimanMarcusItem(scrapy.Item):
 	images = scrapy.Field()
 	# picture = scrapy.Field()
 
-class MBRawCrawlItem(scrapy.item):
+class MBRawCrawlItem(scrapy.Item):
 	supplierID = scrapy.Field()  #Always constant
 	categoryID = scrapy.Field()
 	designer = scrapy.Field()  #good_name, good_designer
