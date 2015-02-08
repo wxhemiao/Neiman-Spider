@@ -26,7 +26,7 @@ def generateDesignerIDForProduct(item):
     return md5_digest(item['designer']+randomStringOfSize(32)+item['designer_desc'])
 
 def newSetForProduct(item, len):
-    return {'ID':generateSetIDForProduct(item), 'usage':'product_picture', 'good_id':item['good_id'], 'count':item['imageurls'].length, 'name':item['name']}
+    return {'ID':generateSetIDForProduct(item), 'usage':'product_picture', 'good_id':item['good_id'], 'count':len(item['imageurls']), 'name':item['name']}
 
 def newImageWithURL(url, setid, Imgindex):
     aImage = {}
@@ -41,12 +41,13 @@ class MBImageManager(object):
         self.sets  = []
         self.assets = []
     def newSetIDWithImagesFor(self,item, imageurls):
-        aSet = newSetForProduct(item), imageurls.length()
+        aSet = newSetForProduct(item, len(imageurls))
         self.sets.append(aSet)
         i = 0
         for aImageURL in imageurls:
             self.assets.append(newImageWithURL(aImageURL, aSet['ID'], i))
             i += 1
+        return aSet['ID']
     def collateShellScriptTo(self,path):
         shFile = open(path, "w")
         for imageItem in self.assets:
@@ -57,15 +58,17 @@ class MBImageManager(object):
 #Processors for item information
 
 class MBProductManager(object):
-    def __init__(self):
+    def __init__(self, noCommit = False):
         self.goods = []
         self.designers = []
         self.imageManager = MBImageManager()
         #Load existing designers on board
-        self.conn = MySQLdb.connect('127.0.0.1', 'jimmy', '19960223', 'mibao')
-        self.cursor = self.conn.cursor(MySQLdb.cursors.DictCursor)
-        self.cursor.execute('select designer_id as ID, designer_name as name, designer_desc as description from t_designer')
-        self.designers = [item for item in self.cursor.fetchall()]
+        self.doNotCommit = noCommit
+        if not noCommit:
+            self.conn = MySQLdb.connect('127.0.0.1', 'jimmy', '19960223', 'mibao')
+            self.cursor = self.conn.cursor(MySQLdb.cursors.DictCursor)
+            self.cursor.execute('select designer_id as ID, designer_name as name, designer_desc as description from t_designer')
+            self.designers = [item for item in self.cursor.fetchall()]
     def designerIDForItem(self,item):
         for x in self.designers:
             if item.designer.upper() == x['name'].upper():
@@ -83,7 +86,7 @@ class MBProductManager(object):
         newItem['good_sku'] = item['sku']
         newItem['supplier_id'] = item['supplierID']
         newItem['category_id'] = item['categoryID']
-        newItem['designer_id'] = self.designerIDForItem['designer']
+        newItem['designer_id'] = self.designerIDForItem('designer')
         newItem['good_designer'] = item['designer']
         newItem['name'] = item['name']
         newItem['cur_price'] = item['curr_price']
@@ -91,9 +94,23 @@ class MBProductManager(object):
         newItem['discount'] = newItem['cur_price']/newItem['orig_price']
         newItem['description'] = item['description']
         newItem['url'] = item['url']
+        # This line removes the name of designer from product.
         imgSID = self.imageManager.newSetIDWithImagesFor(item, item['image_urls'])
+        # Find and Truncate the occurance of color on product.
+        newItem['Color'] = newItem['name'][(newItem['name'].rfind(',')+2):].lower()
+        newItem['name'] = newItem['name'][:newItem['name'].rfind(',')]
+        #Re-format the description part
+        newItem['description'] = newItem['description'].replace('<li>','')
+        newItem['description'] = newItem['description'].replace('</li>', '\n')
         newItem['imageSet'] = imgSID
+        newItem['name'] = newItem['name'].replace(newItem['good_designer']+' ', '')
+
     def commitProducts(self):
         sqlQuery = """insert into t_goods (good_id, good_sku, supplier_id, designer_id, good_designer, good_name, nick_name, 
                 original_price, current_price, category_id, """
+        if self.doNotCommit:
+            print sqlQuery
+        else:
+            mysqli = MySQLdb.Connect()
+            execCursor = mysqli.cursor()
 

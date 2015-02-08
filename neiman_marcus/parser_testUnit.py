@@ -1,11 +1,11 @@
-from postParser import MBProductManager
+import postParser
 import scrapy
 
 
 class MBParserTestUnit(object):
     def __init__(self):
         self.crawlItems = []
-        self.productManager = MBProductManager()
+        self.productManager = postParser.MBProductManager(True)
 
     def newCrawlItemWithValues(self, supplier_ID, cat_ID, dsn, name, sku, orig, curr, desc, dsn_desc, url, img_url):
         newItem = {}
